@@ -73,6 +73,8 @@ Blockchain.prototype.chainIsValid = function(blockchain){
 		const blockHash = this.hashBlock(prevBlock['hash'],{transaction: currentBlock['transaction'], index: currentBlock['index']}, currentBlock['nonce']);
 		if(blockHash.substring(0,4)!=='0000') validChain=false;
 		if(currentBlock['previousBlockHash'] !== prevBlock['hash']) validChain=false;
+	// 	console.log('previousBlockHash =>', prevBlock['hash']);	
+	// 	console.log('currentBlockHash =>', currentBlock['hash']);	
 	};
 	const genesisBlock = blockchain[0];
 	const correctNonce = genesisBlock['nonce'] === 100;
@@ -81,6 +83,51 @@ Blockchain.prototype.chainIsValid = function(blockchain){
 	const correctTransactions = genesisBlock['transaction'].length === 0;
 	if(!correctNonce || !correctPreviousBlockHash || !correctHash || !correctTransactions) validChain=false;
 	return validChain;
+};
+
+Blockchain.prototype.getBlock = function(blockHash){
+	let correctBlock = null;
+	this.chain.forEach(block=>{
+		if(block.hash === blockHash) correctBlock = block;
+	});
+	return correctBlock;
+};
+
+Blockchain.prototype.getTransaction = function(transactionId){
+	let correctTransaction = null;
+	let correctBlock = null;
+	this.chain.forEach(block=>{
+		block.transaction.forEach(transaction=>{
+			if(transaction.transactionId === transactionId){
+				correctTransaction = transaction;
+				correctBlock = block;
+			};
+		});
+	});
+	return {
+		transaction : correctTransaction,
+		block: correctBlock
+	};
+};
+
+Blockchain.prototype.getAddressData = function(address){
+	const addressTransactions = [];
+	this.chain.forEach(block=>{
+		block.transaction.forEach(transaction=>{
+			if(transaction.sender === address || transaction.recipient === address){
+				addressTransactions.push(transaction);
+			};
+		});
+	});
+	let balance = 0;
+	addressTransactions.forEach(transaction=>{
+		if(transaction.recipient === address) balance+= transaction.amount;
+		else if(transaction.sender === address) balance-= transaction.amount;
+	});
+	return{
+		addressTransactions: addressTransactions,
+		addressBalance : balance
+	};
 };
 
 module.exports = Blockchain;
